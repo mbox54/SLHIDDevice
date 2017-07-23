@@ -3,6 +3,9 @@
 //
 
 #pragma once
+#pragma comment (lib, "SLABHIDDevice.lib")		// DLL, HID commands implementation
+
+#include "SLABHIDDevice.h"			// DLL, HID commands interface
 
 
 // CSLHIDDeviceDlg dialog
