@@ -1,5 +1,5 @@
 
-// SLHIDDevice.h : main header file for the PROJECT_NAME application
+// SLHIDDevice.h : main header file for the SLab HID Device application
 //
 
 #pragma once
