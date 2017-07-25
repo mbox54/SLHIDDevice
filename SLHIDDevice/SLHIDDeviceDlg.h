@@ -3,12 +3,30 @@
 //
 
 #pragma once
+
+/////////////////////////////////////////////////////////////////////////////
+// Library Dependencies
 #pragma comment (lib, "SLABHIDDevice.lib")		// DLL, HID commands implementation
 
-#include "SLABHIDDevice.h"			// DLL, HID commands interface
+
+/////////////////////////////////////////////////////////////////////////////
+// Includes
+/////////////////////////////////////////////////////////////////////////////
+#include "SLABHIDDevice.h"						// DLL, HID commands interface
+#include "afxwin.h"
 
 
+/////////////////////////////////////////////////////////////////////////////
+// Definitions
+/////////////////////////////////////////////////////////////////////////////
+
+#define VID					0
+#define PID					0
+
+
+// ===================================================================
 // CSLHIDDeviceDlg dialog
+// ===================================================================
 class CSLHIDDeviceDlg : public CDialogEx
 {
 // Construction
@@ -20,7 +38,11 @@ public:
 	enum { IDD = IDD_SLHIDDEVICE_DIALOG };
 #endif
 
-	protected:
+	CEdit m_EDIT_STATUS;
+	CString m_sEdit_Input;
+
+
+protected:
 	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV support
 
 
@@ -34,4 +56,23 @@ protected:
 	afx_msg void OnPaint();
 	afx_msg HCURSOR OnQueryDragIcon();
 	DECLARE_MESSAGE_MAP()
+
+// Support Functionality
+protected:
+	void Trace(LPCTSTR szFmt, ...);
+	void Input();
+
+// HID Functionality
+public:
+	// 
+	void UpdateDeviceList();
+
+
+
+
+	afx_msg void OnBnClickedOk();
+	afx_msg void OnBnClickedButtonChoose();
+	virtual BOOL PreTranslateMessage(MSG* pMsg);
+
+	CComboBox m_comboDeviceList;
 };
