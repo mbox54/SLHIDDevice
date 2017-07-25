@@ -67,9 +67,10 @@ BEGIN_MESSAGE_MAP(CSLHIDDeviceDlg, CDialogEx)
 	ON_WM_SYSCOMMAND()
 	ON_WM_PAINT()
 	ON_WM_QUERYDRAGICON()
+
 	ON_BN_CLICKED(IDOK, &CSLHIDDeviceDlg::OnBnClickedOk)
-//	ON_WM_KEYDOWN()
 	ON_BN_CLICKED(IDC_BUTTON_CHOOSE, &CSLHIDDeviceDlg::OnBnClickedButtonChoose)
+
 	ON_CBN_CLOSEUP(IDC_COMBO_HIDLIST, &CSLHIDDeviceDlg::OnCbnCloseupComboHidlist)
 	ON_CBN_DROPDOWN(IDC_COMBO_HIDLIST, &CSLHIDDeviceDlg::OnCbnDropdownComboHidlist)
 END_MESSAGE_MAP()
@@ -77,6 +78,22 @@ END_MESSAGE_MAP()
 // -------------------------------------------------------------------
 // CSLHIDDeviceDlg message handlers
 // -------------------------------------------------------------------
+BOOL CSLHIDDeviceDlg::PreTranslateMessage(MSG* pMsg)
+{
+	// catch KEY_DOWD = VK_RETURN
+	if (pMsg->message == WM_KEYDOWN)
+	{
+		if (pMsg->wParam == VK_RETURN)
+		{
+			// Proc Input String
+			Input();
+		}
+	}
+
+	return CDialogEx::PreTranslateMessage(pMsg);
+}
+
+
 BOOL CSLHIDDeviceDlg::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
@@ -163,6 +180,7 @@ HCURSOR CSLHIDDeviceDlg::OnQueryDragIcon()
 // -------------------------------------------------------------------
 // Support Functionality
 // -------------------------------------------------------------------
+
 // print to output control (CEdit)
 void CSLHIDDeviceDlg::Trace(LPCTSTR szFmt, ...)
 {
@@ -186,6 +204,7 @@ void CSLHIDDeviceDlg::Trace(LPCTSTR szFmt, ...)
 	m_EDIT_STATUS.LineScroll(m_EDIT_STATUS.GetLineCount() - 4);
 }
 
+
 // print Line from InputEdit to output control
 void CSLHIDDeviceDlg::Input()
 {
@@ -201,6 +220,10 @@ void CSLHIDDeviceDlg::Input()
 
 }
 
+// -------------------------------------------------------------------
+// HID Functionality
+// -------------------------------------------------------------------
+
 // read System HID Devices, list their Serial string
 void CSLHIDDeviceDlg::UpdateDeviceList()
 {
@@ -213,23 +236,23 @@ void CSLHIDDeviceDlg::UpdateDeviceList()
 		char					deviceString[MAX_SERIAL_STRING_LENGTH];
 
 		// Get previous combobox string selection
-		//GetSelectedDevice(serial);
+		// GetSelectedDevice(serial);
 
-		// Remove all strings from the combobox
+		// > Remove all strings from the combobox control
 		m_comboDeviceList.ResetContent();
 
-		// Get number of HID devices with matching VID/PID (0/0 means not filtered)
+		// > Get number of HID devices with matching VID/PID (0/0 means not filtered)
 		numDevices = HidDevice_GetNumHidDevices(VID, PID);
 
 		if (numDevices > 0)
 		{
 			// [Devices found]
 	
-			// Iterate through each HID device with matching VID/PID
+			// > Iterate through each HID device with matching VID/PID
 			for (DWORD k = 0; k < numDevices; k++)
 			{
 				// Add serial strings to the combobox
-				if (HidDevice_GetHidString(k, VID, PID, HID_SERIAL_STRING, deviceString, MAX_SERIAL_STRING_LENGTH) == HID_DEVICE_SUCCESS)
+				if (HidDevice_GetHidString(k, VID, PID, HID_PID_STRING, deviceString, MAX_SERIAL_STRING_LENGTH) == HID_DEVICE_SUCCESS)
 				{
 					m_comboDeviceList.AddString(CString(deviceString));
 				}
@@ -257,25 +280,36 @@ void CSLHIDDeviceDlg::UpdateDeviceList()
 // try to find HID Device from selected Serial string
 BOOL CSLHIDDeviceDlg::FindDevice(CString serial, DWORD & deviceNum)
 {
-	BOOL					bFound = FALSE;
-	DWORD					numDevices;
-	HID_SMBUS_DEVICE_STR	deviceString;
+	char str_deviceString[MAX_SERIAL_STRING_LENGTH];
 
-	if (HidSmbus_GetNumDevices(&numDevices, VID, PID) == HID_SMBUS_SUCCESS)
+	// > Get number of HID devices with matching VID/PID (0/0 means not filtered)
+	DWORD numDevices = HidDevice_GetNumHidDevices(VID, PID);
+
+	BOOL bFound = FALSE;
+
+	if (numDevices > 0)
 	{
-		for (DWORD i = 0; i < numDevices; i++)
+		// [Devices found]
+
+		// > Iterate through each HID device with matching VID/PID
+		for (DWORD k = 0; k < numDevices; k++)
 		{
-			if (HidSmbus_GetString(i, VID, PID, deviceString, HID_SMBUS_GET_SERIAL_STR) == HID_SMBUS_SUCCESS)
+			if (HidDevice_GetHidString(k, VID, PID, HID_PID_STRING, str_deviceString, MAX_SERIAL_STRING_LENGTH) == HID_DEVICE_SUCCESS)
 			{
-				if (serial.CompareNoCase(CString(deviceString)) == 0)
+				// [DEVICE OBTAINED]
+
+				if (serial.CompareNoCase(CString(str_deviceString)) == 0)
 				{
+					// [MATCH FOUND]					
+					deviceNum = k;
+
 					bFound = TRUE;
-					deviceNum = i;
+
 					break;
 				}
-			}
-		}
-	}
+			}//if (HidDevice_GetHidString
+		}//for (DWORD k = 0; k < numDevices; k++)
+	}//if (numDevices > 0)
 
 	return bFound;
 }
@@ -315,39 +349,45 @@ void CSLHIDDeviceDlg::OnBnClickedOk()
 }
 
 
-//void CSLHIDDeviceDlg::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
-//{
-//	
-//	CDialogEx::OnKeyDown(nChar, nRepCnt, nFlags);
-//}
-
-
+// -------------------------------------------------------------------
+// Control Events
+// -------------------------------------------------------------------
 void CSLHIDDeviceDlg::OnBnClickedButtonChoose()
 {
 	MessageBox(_T("Choose"), _T("Msg1"));
 
 }
 
-
-BOOL CSLHIDDeviceDlg::PreTranslateMessage(MSG* pMsg)
+void CSLHIDDeviceDlg::OnCbnCloseupComboHidlist()
 {
-	// catch KEY_DOWD = VK_RETURN
-	if (pMsg->message == WM_KEYDOWN)
+	
+	CString		serial;
+	DWORD		deviceNum;
+
+	// > Check for valid selected control Item
+	if (GetSelectedDevice(serial))
 	{
-		if (pMsg->wParam == VK_RETURN)
+		// > Check if the selected device has been removed
+		if (!FindDevice(serial, deviceNum))
 		{
-			// Proc Input String
-			Input();
+			// [DEVICE LOST]
+
+			// Then update the device list
+			UpdateDeviceList();
+			//UpdateDeviceInformation(FALSE);
+		}
+		else
+		{
+			// [DEVICE EXISTS]
+
+			// output to controls
+			serial.AppendChar('\n');
+
+			Trace(serial);
 		}
 	}
 
-	return CDialogEx::PreTranslateMessage(pMsg);
-}
 
-
-void CSLHIDDeviceDlg::OnCbnCloseupComboHidlist()
-{
-	// TODO: Add your control notification handler code here
 }
 
 
