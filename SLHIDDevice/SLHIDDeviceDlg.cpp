@@ -70,6 +70,8 @@ BEGIN_MESSAGE_MAP(CSLHIDDeviceDlg, CDialogEx)
 	ON_BN_CLICKED(IDOK, &CSLHIDDeviceDlg::OnBnClickedOk)
 //	ON_WM_KEYDOWN()
 	ON_BN_CLICKED(IDC_BUTTON_CHOOSE, &CSLHIDDeviceDlg::OnBnClickedButtonChoose)
+	ON_CBN_CLOSEUP(IDC_COMBO_HIDLIST, &CSLHIDDeviceDlg::OnCbnCloseupComboHidlist)
+	ON_CBN_DROPDOWN(IDC_COMBO_HIDLIST, &CSLHIDDeviceDlg::OnCbnDropdownComboHidlist)
 END_MESSAGE_MAP()
 
 // -------------------------------------------------------------------
@@ -199,6 +201,7 @@ void CSLHIDDeviceDlg::Input()
 
 }
 
+// read System HID Devices, list their Serial string
 void CSLHIDDeviceDlg::UpdateDeviceList()
 {
 	// Only update the combo list when the drop down list is closed
@@ -251,6 +254,58 @@ void CSLHIDDeviceDlg::UpdateDeviceList()
 
 }
 
+// try to find HID Device from selected Serial string
+BOOL CSLHIDDeviceDlg::FindDevice(CString serial, DWORD & deviceNum)
+{
+	BOOL					bFound = FALSE;
+	DWORD					numDevices;
+	HID_SMBUS_DEVICE_STR	deviceString;
+
+	if (HidSmbus_GetNumDevices(&numDevices, VID, PID) == HID_SMBUS_SUCCESS)
+	{
+		for (DWORD i = 0; i < numDevices; i++)
+		{
+			if (HidSmbus_GetString(i, VID, PID, deviceString, HID_SMBUS_GET_SERIAL_STR) == HID_SMBUS_SUCCESS)
+			{
+				if (serial.CompareNoCase(CString(deviceString)) == 0)
+				{
+					bFound = TRUE;
+					deviceNum = i;
+					break;
+				}
+			}
+		}
+	}
+
+	return bFound;
+}
+
+// Get the combobox device selection
+// If a device is selected, return TRUE and return the serial string
+// Otherwise, return FALSE
+BOOL CSLHIDDeviceDlg::GetSelectedDevice(CString & serial)
+{
+	CString		str_selText;
+
+	// Get current selection index or 
+	// CB_ERR(-1) if no device is selected
+	int	iSel = m_comboDeviceList.GetCurSel();
+
+	BOOL bSelected = FALSE;
+
+	if (iSel != CB_ERR)
+	{
+		// Get the selected device string
+		m_comboDeviceList.GetLBText(iSel, str_selText);
+
+		serial = str_selText;
+
+		bSelected = TRUE;
+	}
+
+	return bSelected;
+}
+
 
 void CSLHIDDeviceDlg::OnBnClickedOk()
 {
@@ -287,4 +342,17 @@ BOOL CSLHIDDeviceDlg::PreTranslateMessage(MSG* pMsg)
 	}
 
 	return CDialogEx::PreTranslateMessage(pMsg);
+}
+
+
+void CSLHIDDeviceDlg::OnCbnCloseupComboHidlist()
+{
+	// TODO: Add your control notification handler code here
+}
+
+
+void CSLHIDDeviceDlg::OnCbnDropdownComboHidlist()
+{
+	// Load control with List of HID Devices Serial string
+	UpdateDeviceList();
 }

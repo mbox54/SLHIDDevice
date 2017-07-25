@@ -66,8 +66,8 @@ protected:
 public:
 	// 
 	void UpdateDeviceList();
-
-
+	BOOL FindDevice(CString serial, DWORD & deviceNum);
+	BOOL GetSelectedDevice(CString & serial);
 
 
 	afx_msg void OnBnClickedOk();
@@ -75,4 +75,6 @@ public:
 	virtual BOOL PreTranslateMessage(MSG* pMsg);
 
 	CComboBox m_comboDeviceList;
+	afx_msg void OnCbnCloseupComboHidlist();
+	afx_msg void OnCbnDropdownComboHidlist();
 };
