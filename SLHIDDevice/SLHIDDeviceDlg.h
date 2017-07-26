@@ -61,6 +61,7 @@ protected:
 protected:
 	void Trace(LPCTSTR szFmt, ...);
 	void Input();
+	void ShowAllDevices();
 
 // HID Functionality
 public:

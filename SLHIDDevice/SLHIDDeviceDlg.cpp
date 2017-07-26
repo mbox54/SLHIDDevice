@@ -208,17 +208,198 @@ void CSLHIDDeviceDlg::Trace(LPCTSTR szFmt, ...)
 // print Line from InputEdit to output control
 void CSLHIDDeviceDlg::Input()
 {
-	// get string
+	// > Get string
 	CString str_sInput;
 	
 	UpdateData(TRUE);
-
 	str_sInput.Append(this->m_sEdit_Input);
-	str_sInput.AppendChar('\n');
 
+	// > Check control content
+	if (str_sInput == "")
+	{
+		// [EMPTY]
+
+		// NOP
+		return;
+	}
+
+	// > Output raw command
 	Trace(str_sInput);
+	Trace(_T("\n"));
+
+	// > Parse string
+	BYTE act = 0;
+
+	if (str_sInput == "exit")
+	{
+		Trace(_T("exit program\n"));
+
+		OnCancel();
+
+		act = 1;
+	}
+
+	if (str_sInput == "show devices")
+	{
+		ShowAllDevices();
+
+		act = 1;
+	}
+
+	if (act == 0)
+	{
+		// [UNKNOWN COMMAND]
+
+		Trace(_T("unknown command\n"));
+	}
+	else
+	{
+		// [VALID COMMAND]
+
+	}
+
+	// clear Input control
+	m_sEdit_Input.Truncate(0);
+
+	UpdateData(FALSE);
+	
+}
+
+// output full info about all found HID Devices
+void CSLHIDDeviceDlg::ShowAllDevices()
+{
+	DWORD numDevices;
+
+	// > Get number of HID devices with matching VID/PID (0/0 means not filtered)
+	numDevices = HidDevice_GetNumHidDevices(VID, PID);
+
+	Trace(_T("HID Device count: %d\n"), numDevices);
+
+	if (numDevices > 0)
+	{
+		// [Devices found]
+
+		Trace(_T("--------------------------\n"));
+
+		// > Iterate through each HID device with matching VID/PID
+		
+
+		for (DWORD k = 0; k < numDevices; k++)
+		{
+			Trace(_T("HID Device %02d:\n"), k);
+
+			// > Output serial strings to control
+
+			char deviceInfo0[MAX_VID_LENGTH]; 
+			Trace(_T("Vendor ID: "));
+			if (HidDevice_GetHidString(k, VID, PID, HID_VID_STRING, deviceInfo0, MAX_VID_LENGTH) == HID_DEVICE_SUCCESS)
+			{
+				Trace(_T("%S \n"), deviceInfo0);
+			}
+			else
+			{
+				Trace(_T("failure to get.. \n"));
+			}
+
+			char deviceInfo1[MAX_PID_LENGTH];
+			Trace(_T("Product ID: "));
+			if (HidDevice_GetHidString(k, VID, PID, HID_PID_STRING, deviceInfo1, MAX_PID_LENGTH) == HID_DEVICE_SUCCESS)
+			{
+				Trace(_T("%S \n"), deviceInfo1);
+			}
+			else
+			{
+				Trace(_T("failure to get.. \n"));
+			}
+
+			char deviceInfo2[MAX_PATH_LENGTH];
+			Trace(_T("Path String: "));
+			if (HidDevice_GetHidString(k, VID, PID, HID_PATH_STRING, deviceInfo2, MAX_PATH_LENGTH) == HID_DEVICE_SUCCESS)
+			{
+				CString str_tmp;
+				WORD uiTmpStrLength = strlen(deviceInfo2);
+
+				for (WORD kk = 0; kk < uiTmpStrLength; kk++)
+				{
+					str_tmp.AppendChar(deviceInfo2[kk]);
+				}
+
+				str_tmp.AppendChar('\n');
+				Trace(str_tmp);
+			}
+			else
+			{
+				Trace(_T("failure to get.. \n"));
+			}
+
+			char deviceInfo3[MAX_SERIAL_STRING_LENGTH];
+			Trace(_T("Serial String: "));
+			if (HidDevice_GetHidString(k, VID, PID, HID_SERIAL_STRING, deviceInfo3, MAX_SERIAL_STRING_LENGTH) == HID_DEVICE_SUCCESS)
+			{
+				CString str_tmp;
+				WORD uiTmpStrLength = strlen(deviceInfo3);
+
+				for (WORD kk = 0; kk < uiTmpStrLength; kk++)
+				{
+					str_tmp.AppendChar(deviceInfo3[kk]);
+				}
+
+				str_tmp.AppendChar('\n');
+				Trace(str_tmp);
+			}
+			else
+			{
+				Trace(_T("failure to get.. \n"));
+			}
+
+			char deviceInfo4[MAX_MANUFACTURER_STRING_LENGTH];
+			Trace(_T("Manufacturer String: "));
+			if (HidDevice_GetHidString(k, VID, PID, HID_MANUFACTURER_STRING, deviceInfo4, MAX_MANUFACTURER_STRING_LENGTH) == HID_DEVICE_SUCCESS)
+			{
+				CString str_tmp;
+				WORD uiTmpStrLength = strlen(deviceInfo4);
+
+				for (WORD kk = 0; kk < uiTmpStrLength; kk++)
+				{
+					str_tmp.AppendChar(deviceInfo4[kk]);
+				}
+
+				str_tmp.AppendChar('\n');
+				Trace(str_tmp);
+			}
+			else
+			{
+				Trace(_T("failure to get.. \n"));
+			}
+
+			char deviceInfo5[HID_PRODUCT_STRING];
+			Trace(_T("Product String: "));
+			if (HidDevice_GetHidString(k, VID, PID, HID_PRODUCT_STRING, deviceInfo5, HID_PRODUCT_STRING) == HID_DEVICE_SUCCESS)
+			{
+				CString str_tmp;
+				WORD uiTmpStrLength = strlen(deviceInfo5);
+
+				for (WORD kk = 0; kk < uiTmpStrLength; kk++)
+				{
+					str_tmp.AppendChar(deviceInfo5[kk]);
+				}
+
+				str_tmp.AppendChar('\n');
+				Trace(str_tmp);
+			}
+			else
+			{
+				Trace(_T("failure to get.. \n"));
+			}
+
+			Trace(_T(" \n"));
+		}
+
+	}//if (numDevices > 0)
+
 
 }
+
 
 // -------------------------------------------------------------------
 // HID Functionality
@@ -280,6 +461,7 @@ void CSLHIDDeviceDlg::UpdateDeviceList()
 // try to find HID Device from selected Serial string
 BOOL CSLHIDDeviceDlg::FindDevice(CString serial, DWORD & deviceNum)
 {
+	
 	char str_deviceString[MAX_SERIAL_STRING_LENGTH];
 
 	// > Get number of HID devices with matching VID/PID (0/0 means not filtered)
@@ -386,7 +568,6 @@ void CSLHIDDeviceDlg::OnCbnCloseupComboHidlist()
 			Trace(serial);
 		}
 	}
-
 
 }
 
